@@ -1,21 +1,16 @@
 import { DataTypes } from 'sequelize';
-import { sequelize } from '../database/db.js';
+import { sequelize } from '../config/database.js';
 import bcrypt from 'bcryptjs';
 
 const User = sequelize.define('User', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
-  fullName: {
+  name: {
     type: DataTypes.STRING,
     allowNull: false,
-    field: 'full_name',
-    validate: {
-      len: [2, 100],
-      notEmpty: true
-    }
   },
   email: {
     type: DataTypes.STRING,
@@ -23,63 +18,71 @@ const User = sequelize.define('User', {
     unique: true,
     validate: {
       isEmail: true,
-      notEmpty: true
-    }
+    },
   },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
-    validate: {
-      len: [4, 255],
-      notEmpty: true
-    }
+  },
+  role: {
+    type: DataTypes.ENUM('user', 'admin'),
+    defaultValue: 'user',
   },
   phone: {
     type: DataTypes.STRING,
-    allowNull: false,
-    field: 'phone_number',
-    validate: {
-      notEmpty: true
-    }
+    allowNull: true,
   },
   address: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    validate: {
-      len: [4, 500],
-      notEmpty: true
-    }
+    type: DataTypes.TEXT,
+    allowNull: true,
   },
-  wasteType: {
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+  balance: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+  },
+  totalEarnings: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+  },
+  profileImage: {
     type: DataTypes.STRING,
-    allowNull: false,
-    field: 'primary_waste_type',
-    validate: {
-      notEmpty: true
-    }
-  }
+    allowNull: true,
+  },
+  bio: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  preferences: {
+    type: DataTypes.JSON,
+    allowNull: true,
+  },
+  lastLogin: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
 }, {
-  timestamps: true,
-  underscored: true,
   tableName: 'users',
+  timestamps: true,
   hooks: {
     beforeCreate: async (user) => {
       if (user.password) {
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
+        user.password = await bcrypt.hash(user.password, 10);
       }
     },
     beforeUpdate: async (user) => {
       if (user.changed('password')) {
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
+        user.password = await bcrypt.hash(user.password, 10);
       }
-    }
-  }
+    },
+  },
 });
 
-User.prototype.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+User.prototype.comparePassword = async function(password) {
+  return await bcrypt.compare(password, this.password);
 };
 
 export default User;
